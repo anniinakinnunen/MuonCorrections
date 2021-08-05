@@ -3,6 +3,7 @@
 #include "TTree.h"
 #include "Math/Vector4D.h"
 #include "TBranch.h"
+#include <TError.h>
 
 // Compute the invariant mass of two muon four-vectors
 float computeInvariantMass(Float_t pt1, Float_t pt2, Float_t eta1, Float_t eta2, Float_t phi1, Float_t phi2, Float_t mass1, Float_t mass2) {
@@ -12,10 +13,10 @@ float computeInvariantMass(Float_t pt1, Float_t pt2, Float_t eta1, Float_t eta2,
 }
 
 // Apply the corrections to dataset
-int applyCorrections(string filename, string pathToFile, bool isData) {
+int applyCorrections(string filename, string pathToFile, string treeName, bool isData, bool correctAll) {
   // Create TTree from ROOT file
   TFile *f1 = TFile::Open((pathToFile).c_str());
-  TTree *DataTree = (TTree*)f1->Get("Events");
+  TTree *DataTree = (TTree*)f1->Get((treeName).c_str());
 
   //Variables to hold values read from the tree
   int maxmuon=1000;
@@ -34,33 +35,36 @@ int applyCorrections(string filename, string pathToFile, bool isData) {
   DataTree->SetBranchAddress("Muon_mass", &Muon_mass);
   DataTree->SetBranchAddress("Muon_charge", &Muon_charge);
 
+  //Create an output file for corrected values and a clone of the original tree
+  TFile *f2 = new TFile(("./RochesterCorrections/Test/" + filename + "_Cor.root").c_str(),"recreate");
+  TTree *DataTreeCor = DataTree->CloneTree(0);
+
   // New branches for corrected values
-  Float_t Dimuon_mass;
-  Float_t Dimuon_mass_cor;
   Float_t Muon_pt_cor[maxmuon];
   Float_t Muon_eta_cor[maxmuon];
   Float_t Muon_phi_cor[maxmuon];
   Float_t Muon_mass_cor[maxmuon];
 
-  TBranch *bDimuon_mass = DataTree->Branch("Dimuon_mass", &Dimuon_mass, "Dimuon_mass/F");
-  TBranch *bDimuon_mass_cor = DataTree->Branch("Dimuon_mass_cor", &Dimuon_mass_cor, "Dimuon_mass_cor/F");
-  TBranch *bMuon_pt_cor = DataTree->Branch("Muon_pt_cor", &Muon_pt_cor, "Muon_pt_cor[nMuon]/F");
-  TBranch *bMuon_eta_cor = DataTree->Branch("Muon_eta_cor", &Muon_eta_cor, "Muon_eta_cor[nMuon]/F");
-  TBranch *bMuon_phi_cor = DataTree->Branch("Muon_phi_cor", &Muon_phi_cor, "Muon_phi_cor[nMuon]/F");
-  TBranch *bMuon_mass_cor = DataTree->Branch("Muon_mass_cor", &Muon_mass_cor, "Muon_mass_cor[nMuon]/F");
+  TBranch *bMuon_pt_cor = DataTreeCor->Branch("Muon_pt_cor", &Muon_pt_cor, "Muon_pt_cor[nMuon]/F");
+  TBranch *bMuon_eta_cor = DataTreeCor->Branch("Muon_eta_cor", &Muon_eta_cor, "Muon_eta_cor[nMuon]/F");
+  TBranch *bMuon_phi_cor = DataTreeCor->Branch("Muon_phi_cor", &Muon_phi_cor, "Muon_phi_cor[nMuon]/F");
+  TBranch *bMuon_mass_cor = DataTreeCor->Branch("Muon_mass_cor", &Muon_mass_cor, "Muon_mass_cor[nMuon]/F");
+
+  // New branches for invariant mass of dimuon system
+  Float_t Dimuon_mass;
+  Float_t Dimuon_mass_cor;
+
+  TBranch *bDimuon_mass = DataTreeCor->Branch("Dimuon_mass", &Dimuon_mass, "Dimuon_mass/F");
+  TBranch *bDimuon_mass_cor = DataTreeCor->Branch("Dimuon_mass_cor", &Dimuon_mass_cor, "Dimuon_mass_cor/F");
 
   // New branches for plotting separately postive and negative muons' eta
-  Float_t Muon_eta_pos[maxmuon];
-  Float_t Muon_eta_neg[maxmuon];
+  Float_t Muon_eta_pos;
+  Float_t Muon_eta_neg;
 
-  TBranch *bMuon_eta_pos = DataTree->Branch("Muon_eta_pos", &Muon_eta_pos, "Muon_eta_pos[nMuon]/F");
-  TBranch *bMuon_eta_neg = DataTree->Branch("Muon_eta_neg", &Muon_eta_neg, "Muon_eta_neg[nMuon]/F");
+  TBranch *bMuon_eta_pos = DataTreeCor->Branch("Muon_eta_pos", &Muon_eta_pos, "Muon_eta_pos/F");
+  TBranch *bMuon_eta_neg = DataTreeCor->Branch("Muon_eta_neg", &Muon_eta_neg, "Muon_eta_neg/F");
 
   rochcor2012 rmcor; // make the pointer of rochcor class
-
-  //Create an output file for corrected values and a clone of the original tree
-  TFile *f2 = new TFile(("./RochesterCorrections/Test/" + filename + "_Cor.root").c_str(),"recreate");
-  TTree *DataTreeCor = DataTree->CloneTree(0);
 
   // Variables needed for corrections
   float ntrk = 0; //ntrk (number of track layer) is one of input and it can slightly improved the extra smearing
@@ -71,31 +75,17 @@ int applyCorrections(string filename, string pathToFile, bool isData) {
 
   // Loop over events
   Int_t nEntries = (Int_t)DataTree->GetEntries();
+  Int_t Selected = 0;
 
   for (Int_t k=0; k<nEntries; k++) {
     DataTree->GetEntry(k);
 
-    // Select events with exactly two muons
-    if (nMuon == 2 ) {
-      // Select events with two muons of opposite charge
-      if (Muon_charge[0] != Muon_charge[1]) {
+    std::cout << "Entry #: " << k << std::endl;
 
-        // Compute invariant mass of the dimuon system
-        Dimuon_mass = computeInvariantMass(Muon_pt[0], Muon_pt[1], Muon_eta[0], Muon_eta[1], Muon_phi[0], Muon_phi[1], Muon_mass[0], Muon_mass[1]);
-        bDimuon_mass->Fill();
-
+    if (correctAll) { // Correct all muons in dataset
+      if (nMuon > 0) {
         // Loop over muons in event
         for (UInt_t i=0; i<nMuon; i++) {
-
-          // Fill positive and negative muons eta branches
-          if (Muon_charge[i] > 0) {
-            Muon_eta_pos[i] = Muon_eta[i];
-            bMuon_eta_pos->Fill();
-          } else {
-            Muon_eta_neg[i] = Muon_eta[i];
-            bMuon_eta_neg->Fill();
-          }
-
           // Create TLorentzVector
           TLorentzVector mu;
           mu.SetPtEtaPhiM(Muon_pt[i], Muon_eta[i], Muon_phi[i], Muon_mass[i]);
@@ -109,21 +99,83 @@ int applyCorrections(string filename, string pathToFile, bool isData) {
 
           // Save corrected values
           Muon_pt_cor[i] = mu.Pt();
-          bMuon_pt_cor->Fill();
           Muon_eta_cor[i] = mu.Eta();
-          bMuon_eta_cor->Fill();
           Muon_phi_cor[i] = mu.Phi();
-          bMuon_phi_cor->Fill();
           Muon_mass_cor[i] = mu.M();
-          bMuon_mass_cor->Fill();
         }
+      }
+    } else { // Correct muons that pass selections
+      // Select events with exactly two muons
+      if (nMuon == 2 ) {
+        // Select events with two muons of opposite charge
+        if (Muon_charge[0] != Muon_charge[1]) {
 
-        // Compute invariant mass of the corrected dimuon system
-        Dimuon_mass_cor = computeInvariantMass(Muon_pt_cor[0], Muon_pt_cor[1], Muon_eta_cor[0], Muon_eta_cor[1], Muon_phi_cor[0], Muon_phi_cor[1], Muon_mass_cor[0], Muon_mass_cor[1]);
-        bDimuon_mass_cor->Fill();
+          std::cout << "New entry #: " << Selected << std::endl;
+          Selected++;
 
+          // Compute invariant mass of the dimuon system
+          Dimuon_mass = computeInvariantMass(Muon_pt[0], Muon_pt[1], Muon_eta[0], Muon_eta[1], Muon_phi[0], Muon_phi[1], Muon_mass[0], Muon_mass[1]);
+          std::cout << "Dimuon_mass: " << Dimuon_mass << std::endl;
+          bDimuon_mass->Fill();
+
+          // Choose positive and negative muons' etas
+          if (Muon_charge[0] > 0) {
+            Muon_eta_pos = Muon_eta[0];
+            Muon_eta_neg = Muon_eta[1];
+            std::cout << "Eta_pos: " << Muon_eta_pos << std::endl;
+          } else {
+            Muon_eta_pos = Muon_eta[1];
+            Muon_eta_neg = Muon_eta[0];
+            std::cout << "Eta_neg: " << Muon_eta_neg << std::endl;
+          }
+
+          bMuon_eta_pos->Fill();
+          bMuon_eta_neg->Fill();
+          //std::cout << "Eta_pos fill" << std::endl;
+          //std::cout << "Eta_neg fill" << std::endl;
+
+          // Loop over muons in event
+          for (UInt_t i=0; i<nMuon; i++) {
+            // Create TLorentzVector
+            TLorentzVector mu;
+            mu.SetPtEtaPhiM(Muon_pt[i], Muon_eta[i], Muon_phi[i], Muon_mass[i]);
+
+            // Apply the corrections
+            if (isData) {
+              rmcor.momcor_data(mu, Muon_charge[i], runopt, qter);
+            } else {
+              rmcor.momcor_mc(mu, Muon_charge[i], ntrk, qter);
+            }
+
+            // Save corrected values
+            Muon_pt_cor[i] = mu.Pt();
+            std::cout << "Pt: " << mu.Pt() << std::endl;
+            Muon_eta_cor[i] = mu.Eta();
+            std::cout << "Eta: " << mu.Eta() << std::endl;
+            Muon_phi_cor[i] = mu.Phi();
+            std::cout << "Phi: " << mu.Phi() << std::endl;
+            Muon_mass_cor[i] = mu.M();
+            std::cout << "M: " << mu.M() << std::endl;
+          }
+
+          // Compute invariant mass of the corrected dimuon system
+          Dimuon_mass_cor = computeInvariantMass(Muon_pt_cor[0], Muon_pt_cor[1], Muon_eta_cor[0], Muon_eta_cor[1], Muon_phi_cor[0], Muon_phi_cor[1], Muon_mass_cor[0], Muon_mass_cor[1]);
+          std::cout << "Dimuon_mass_cor: " << Dimuon_mass_cor << std::endl;
+          bDimuon_mass_cor->Fill();
+
+        }
       }
     }
+
+    //std::cout << "Pt fill" << std::endl;
+    bMuon_pt_cor->Fill();
+    //std::cout << "Eta fill" << std::endl;
+    bMuon_eta_cor->Fill();
+    //std::cout << "Phi fill" << std::endl;
+    bMuon_phi_cor->Fill();
+    //std::cout << "M fill" << std::endl;
+    bMuon_mass_cor->Fill();
+
     //Fill the corrected values to the new tree
     DataTreeCor->Fill();
   }
@@ -134,6 +186,7 @@ int applyCorrections(string filename, string pathToFile, bool isData) {
   DataTreeCor->Write();
 
   delete f1;
+  delete f2;
 
   return 0;
 }
@@ -141,8 +194,8 @@ int applyCorrections(string filename, string pathToFile, bool isData) {
 void Analysis::main()
 {
   // Data
-  // applyCorrections("Run2012BC_DoubleMuParked_Muons", "root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root", true);
+  //applyCorrections("Run2012BC_DoubleMuParked_Muons", "root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root", true);
 
   // MC
-  applyCorrections("ZZTo2e2mu", "root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/HiggsToFourLeptonsNanoAODOutreachAnalysis/ZZTo2e2mu.root", false);
+  applyCorrections("ZZTo2e2mu", "root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/HiggsToFourLeptonsNanoAODOutreachAnalysis/ZZTo2e2mu.root", "Events", false, false);
 }
