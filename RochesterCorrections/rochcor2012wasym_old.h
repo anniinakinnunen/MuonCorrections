@@ -1,6 +1,3 @@
-#ifndef ROCHCOR2012WASYM_H
-#define ROCHCOR2012WASYM_H
-
 #include <iostream>
 #include <TChain.h>
 #include <TClonesArray.h>
@@ -35,19 +32,19 @@ class rochcor2012 {
 
 
   //  static float netabin[9] = {-2.4,-2.1,-1.4,-0.7,0.0,0.7,1.4,2.1,2.4};
-  static constexpr double pi = 3.14159265358979323846;
+  static const double pi = 3.14159265358979323846;
   static const double netabin[25];
   static const double anetabin[13];
 
-  static constexpr double genm_smr = 9.10193e+01; //gen mass peak with eta dependent gaussian smearing => better match in Z mass profile vs. eta/phi
-  static constexpr double genm = 91.06; //gen mass peak without smearing => Z mass profile vs. eta/phi in CMS note
+  static const double genm_smr = 9.10193e+01; //gen mass peak with eta dependent gaussian smearing => better match in Z mass profile vs. eta/phi
+  static const double genm = 91.06; //gen mass peak without smearing => Z mass profile vs. eta/phi in CMS note
 
-  static constexpr double mrecm = 9.10411e+01; //rec mass peak in MC
-  static constexpr double drecm = 9.06951e+01; //rec mass peak in data
-  static constexpr double mgscl_stat = 0.0001; //stat. error of global factor for mass peak in MC
-  static constexpr double mgscl_syst = 0.0006; //syst. error of global factor for mass peak in MC
-  static constexpr double dgscl_stat = 0.0001; //stat. error of global factor for mass peak in data
-  static constexpr double dgscl_syst = 0.0008; //syst. error of global factor for mass peak in data
+  static const double mrecm = 9.10411e+01; //rec mass peak in MC
+  static const double drecm = 9.06951e+01; //rec mass peak in data
+  static const double mgscl_stat = 0.0001; //stat. error of global factor for mass peak in MC
+  static const double mgscl_syst = 0.0006; //syst. error of global factor for mass peak in MC
+  static const double dgscl_stat = 0.0001; //stat. error of global factor for mass peak in data
+  static const double dgscl_syst = 0.0008; //syst. error of global factor for mass peak in data
 
   static const double sf[3];
   static const double sfer[3];
@@ -89,5 +86,4 @@ class rochcor2012 {
 
 
 };
-
-#endif /* ROCHCOR2012WASYM_H */
+  
