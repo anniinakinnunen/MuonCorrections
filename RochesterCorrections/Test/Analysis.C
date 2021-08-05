@@ -104,7 +104,7 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
           Muon_mass_cor[i] = mu.M();
         }
       }
-    } else { // Correct muons that pass selections
+    } else { // Correct muons that pass the selections
       // Select events with exactly two muons
       if (nMuon == 2 ) {
         // Select events with two muons of opposite charge
@@ -167,6 +167,7 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
       }
     }
 
+    // Fill the branches with corrected values
     //std::cout << "Pt fill" << std::endl;
     bMuon_pt_cor->Fill();
     //std::cout << "Eta fill" << std::endl;
@@ -193,9 +194,12 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
 
 void Analysis::main()
 {
+  // Example
+  // applyCorrections("nameOfFile", "pathToFile", "treeName", isData, correctAll);
+
   // Data
-  //applyCorrections("Run2012BC_DoubleMuParked_Muons", "root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root", true);
+  //applyCorrections("Run2012BC_DoubleMuParked_Muons", "root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root", "Events", true, false);
 
   // MC
-  applyCorrections("ZZTo2e2mu", "root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/HiggsToFourLeptonsNanoAODOutreachAnalysis/ZZTo2e2mu.root", "Events", false, false);
+  applyCorrections("ZZTo2e2mu", "root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/HiggsToFourLeptonsNanoAODOutreachAnalysis/ZZTo2e2mu.root", "Events", false, true);
 }
