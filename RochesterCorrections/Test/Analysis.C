@@ -80,8 +80,6 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
   for (Int_t k=0; k<nEntries; k++) {
     DataTree->GetEntry(k);
 
-    std::cout << "Entry #: " << k << std::endl;
-
     if (correctAll) { // Correct all muons in dataset
       if (nMuon > 0) {
         // Loop over muons in event
@@ -103,6 +101,8 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
           Muon_phi_cor[i] = mu.Phi();
           Muon_mass_cor[i] = mu.M();
         }
+
+        DataTreeCor->Fill();
       }
     } else { // Correct muons that pass the selections
       // Select events with exactly two muons
@@ -110,29 +110,17 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
         // Select events with two muons of opposite charge
         if (Muon_charge[0] != Muon_charge[1]) {
 
-          std::cout << "New entry #: " << Selected << std::endl;
-          Selected++;
-
           // Compute invariant mass of the dimuon system
           Dimuon_mass = computeInvariantMass(Muon_pt[0], Muon_pt[1], Muon_eta[0], Muon_eta[1], Muon_phi[0], Muon_phi[1], Muon_mass[0], Muon_mass[1]);
-          std::cout << "Dimuon_mass: " << Dimuon_mass << std::endl;
-          bDimuon_mass->Fill();
 
           // Choose positive and negative muons' etas
           if (Muon_charge[0] > 0) {
             Muon_eta_pos = Muon_eta[0];
             Muon_eta_neg = Muon_eta[1];
-            std::cout << "Eta_pos: " << Muon_eta_pos << std::endl;
           } else {
             Muon_eta_pos = Muon_eta[1];
             Muon_eta_neg = Muon_eta[0];
-            std::cout << "Eta_neg: " << Muon_eta_neg << std::endl;
           }
-
-          bMuon_eta_pos->Fill();
-          bMuon_eta_neg->Fill();
-          //std::cout << "Eta_pos fill" << std::endl;
-          //std::cout << "Eta_neg fill" << std::endl;
 
           // Loop over muons in event
           for (UInt_t i=0; i<nMuon; i++) {
@@ -149,36 +137,19 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
 
             // Save corrected values
             Muon_pt_cor[i] = mu.Pt();
-            std::cout << "Pt: " << mu.Pt() << std::endl;
             Muon_eta_cor[i] = mu.Eta();
-            std::cout << "Eta: " << mu.Eta() << std::endl;
             Muon_phi_cor[i] = mu.Phi();
-            std::cout << "Phi: " << mu.Phi() << std::endl;
             Muon_mass_cor[i] = mu.M();
-            std::cout << "M: " << mu.M() << std::endl;
           }
 
           // Compute invariant mass of the corrected dimuon system
           Dimuon_mass_cor = computeInvariantMass(Muon_pt_cor[0], Muon_pt_cor[1], Muon_eta_cor[0], Muon_eta_cor[1], Muon_phi_cor[0], Muon_phi_cor[1], Muon_mass_cor[0], Muon_mass_cor[1]);
-          std::cout << "Dimuon_mass_cor: " << Dimuon_mass_cor << std::endl;
-          bDimuon_mass_cor->Fill();
+
+          DataTreeCor->Fill();
 
         }
       }
     }
-
-    // Fill the branches with corrected values
-    //std::cout << "Pt fill" << std::endl;
-    bMuon_pt_cor->Fill();
-    //std::cout << "Eta fill" << std::endl;
-    bMuon_eta_cor->Fill();
-    //std::cout << "Phi fill" << std::endl;
-    bMuon_phi_cor->Fill();
-    //std::cout << "M fill" << std::endl;
-    bMuon_mass_cor->Fill();
-
-    //Fill the corrected values to the new tree
-    DataTreeCor->Fill();
   }
 
   std::cout << "Writing tree to ouput file" << std::endl;
@@ -198,8 +169,8 @@ void Analysis::main()
   // applyCorrections("nameOfFile", "pathToFile", "treeName", isData, correctAll);
 
   // Data
-  //applyCorrections("Run2012BC_DoubleMuParked_Muons", "root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root", "Events", true, false);
+  applyCorrections("Run2012BC_DoubleMuParked_Muons", "root://eospublic.cern.ch//eos/opendata/cms/derived-data/AOD2NanoAODOutreachTool/Run2012BC_DoubleMuParked_Muons.root", "Events", true, false);
 
   // MC
-  applyCorrections("ZZTo2e2mu", "root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/HiggsToFourLeptonsNanoAODOutreachAnalysis/ZZTo2e2mu.root", "Events", false, true);
+  applyCorrections("ZZTo2e2mu", "root://eospublic.cern.ch//eos/opendata/cms/upload/stefan/HiggsToFourLeptonsNanoAODOutreachAnalysis/ZZTo2e2mu.root", "Events", false, false);
 }
