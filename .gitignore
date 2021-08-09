@@ -1,3 +1,5 @@
-ObjectInfoNtuple.root
-Run2012BC_DoubleMuParked_Muons.root
-Run2012BC_DoubleMuParked_Muons_RochCor.root
+*.pdf
+*.root
+*.d
+*.so
+*.pcm
