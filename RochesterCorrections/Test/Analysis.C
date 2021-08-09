@@ -3,7 +3,6 @@
 #include "TTree.h"
 #include "Math/Vector4D.h"
 #include "TBranch.h"
-#include <TError.h>
 
 // Compute the invariant mass of two muon four-vectors
 float computeInvariantMass(Float_t pt1, Float_t pt2, Float_t eta1, Float_t eta2, Float_t phi1, Float_t phi2, Float_t mass1, Float_t mass2) {
