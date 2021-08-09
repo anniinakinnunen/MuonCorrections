@@ -75,7 +75,6 @@ int applyCorrections(string filename, string pathToFile, string treeName, bool i
 
   // Loop over events
   Int_t nEntries = (Int_t)DataTree->GetEntries();
-  Int_t Selected = 0;
 
   for (Int_t k=0; k<nEntries; k++) {
     DataTree->GetEntry(k);
